@@ -495,7 +495,6 @@ namespace Pamac {
 		public TransactionGtk transaction;
 		public Database database { get; construct; }
 		LocalConfig local_config;
-		Soup.Session soup_session;
 
 		bool important_details;
 		bool transaction_running;
@@ -672,11 +671,6 @@ namespace Pamac {
 					}
 				}
 			}
-
-			// soup session to dwonload icons and screenshots
-			soup_session = new Soup.Session ();
-			soup_session.user_agent = "Pamac/%s".printf (VERSION);
-			soup_session.timeout = 30;
 
 			// check software mode
 			check_software_mode ();
@@ -1029,10 +1023,8 @@ namespace Pamac {
 		}
 
 		async GenericArray<Gdk.Pixbuf> get_screenshots_pixbufs (GenericArray<string> urls) {
-			// keep a copy of urls because of async
-			GenericArray<string> urls_copy = urls.copy (strdup);
 			var pixbufs = new GenericArray<Gdk.Pixbuf> ();
-			foreach (unowned string url in urls_copy) {
+			foreach (unowned string url in urls) {
 				var uri = File.new_for_uri (url);
 				var cached_screenshot = File.new_for_path ("/tmp/pamac-app-screenshots/%s".printf (uri.get_basename ()));
 				Gdk.Pixbuf pixbuf = null;
@@ -1046,24 +1038,19 @@ namespace Pamac {
 				} else {
 					// download screenshot
 					try {
-						var request = soup_session.request (url);
-						try {
-							var inputstream = yield request.send_async (null);
-							pixbuf = new Gdk.Pixbuf.from_stream (inputstream);
-							// scale pixbux at a width of 600 pixels
-							int width = pixbuf.get_width ();
-							if (width > 600) {
-								float ratio = (float) width / (float) pixbuf.get_height ();
-								int new_height = (int) (600 / ratio);
-								pixbuf = pixbuf.scale_simple (600, new_height, Gdk.InterpType.BILINEAR);
-							}
-							// save scaled image in tmp
-							FileOutputStream os = cached_screenshot.append_to (FileCreateFlags.NONE);
-							pixbuf.save_to_stream (os, "png");
-							pixbufs.add (pixbuf);
-						} catch (Error e) {
-							warning ("%s: %s", url, e.message);
+						var inputstream = yield database.get_url_stream (url);
+						pixbuf = new Gdk.Pixbuf.from_stream (inputstream);
+						// scale pixbux at a width of 600 pixels
+						int width = pixbuf.get_width ();
+						if (width > 600) {
+							float ratio = (float) width / (float) pixbuf.get_height ();
+							int new_height = (int) (600 / ratio);
+							pixbuf = pixbuf.scale_simple (600, new_height, Gdk.InterpType.BILINEAR);
 						}
+						// save scaled image in tmp
+						FileOutputStream os = cached_screenshot.append_to (FileCreateFlags.NONE);
+						pixbuf.save_to_stream (os, "png");
+						pixbufs.add (pixbuf);
 					} catch (Error e) {
 						warning ("%s: %s", url, e.message);
 					}
@@ -1085,21 +1072,16 @@ namespace Pamac {
 			} else {
 				// download icon
 				try {
-					var request = soup_session.request (url);
-					try {
-						var inputstream = yield request.send_async (null);
-						pixbuf = new Gdk.Pixbuf.from_stream (inputstream);
-						// scale pixbux at 64 pixels
-						int width = pixbuf.get_width ();
-						if (width > 64) {
-							pixbuf = pixbuf.scale_simple (64, 64, Gdk.InterpType.BILINEAR);
-						}
-						// save scaled image in tmp
-						FileOutputStream os = cached_icon.append_to (FileCreateFlags.NONE);
-						pixbuf.save_to_stream (os, "png");
-					} catch (Error e) {
-						warning ("%s: %s", url, e.message);
+					var inputstream = yield database.get_url_stream (url);
+					pixbuf = new Gdk.Pixbuf.from_stream (inputstream);
+					// scale pixbux at 64 pixels
+					int width = pixbuf.get_width ();
+					if (width > 64) {
+						pixbuf = pixbuf.scale_simple (64, 64, Gdk.InterpType.BILINEAR);
 					}
+					// save scaled image in tmp
+					FileOutputStream os = cached_icon.append_to (FileCreateFlags.NONE);
+					pixbuf.save_to_stream (os, "png");
 				} catch (Error e) {
 					warning ("%s: %s", url, e.message);
 				}
@@ -3014,7 +2996,7 @@ namespace Pamac {
 			if (search_entry_timeout_id != 0) {
 				Source.remove (search_entry_timeout_id);
 			}
-			search_entry_timeout_id = Timeout.add (300, search_entry_timeout_callback);
+			search_entry_timeout_id = Timeout.add (1000, search_entry_timeout_callback);
 		}
 
 		[GtkCallback]

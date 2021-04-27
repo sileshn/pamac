@@ -29,9 +29,6 @@ namespace Pamac {
 			trans_cancellable = new Cancellable ();
 			// alpm_utils global variable declared in alpm_utils.vala
 			// and initialized in transaction.vala
-			// set user agent
-			var utsname = Posix.utsname();
-			Environment.set_variable ("HTTP_USER_AGENT", "pamac (%s %s)".printf (utsname.sysname, utsname.machine), true);
 		}
 
 		public async bool get_authorization () {

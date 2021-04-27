@@ -69,8 +69,14 @@ namespace Pamac {
 
 		public Daemon () {
 			config = new Config ("/etc/pamac.conf");
-			// alpm_utils global variable declared in alpm_utils.vala
-			alpm_utils = new AlpmUtils (config);
+			// alpm_utils global variable and get_user_agent defined in alpm_utils.vala
+			string user_agent = get_user_agent ();
+			var soup_session = new Soup.Session ();
+			soup_session.user_agent = user_agent;
+			soup_session.timeout = 30;
+			alpm_utils = new AlpmUtils (config, soup_session);
+			// set HTTP_USER_AGENT needed when downloading using libalpm like refreshing dbs in alpm_utils.vala
+			Environment.set_variable ("HTTP_USER_AGENT", user_agent, true);
 			lockfile_cond = Cond ();
 			lockfile_mutex = Mutex ();
 			if (alpm_utils.lockfile.query_exists ()) {

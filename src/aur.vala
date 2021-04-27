@@ -28,14 +28,8 @@ namespace Pamac {
 		HashTable<unowned string, Json.Object> cached_infos;
 		HashTable<string, Json.Array> search_results;
 
-		public AUR () {
-			Object ();
-		}
-
-		construct {
-			session = new Soup.Session ();
-			session.user_agent = "Pamac/%s".printf (VERSION);
-			session.timeout = 30;
+		public AUR (Soup.Session session) {
+			this.session = session;
 			cached_infos = new HashTable<unowned string, Json.Object> (str_hash, str_equal);
 			search_results = new HashTable<string, Json.Array> (str_hash, str_equal);
 		}
@@ -44,6 +38,11 @@ namespace Pamac {
 			try {
 				var message = new Soup.Message ("GET", uri);
 				InputStream input_stream = session.send (message);
+				uint status_code = message.status_code;
+				if (status_code >= 400) {
+					stderr.printf ("Failed to query %s from AUR: error %u\n", uri, status_code);
+					return null;
+				}
 				var parser = new Json.Parser.immutable_new ();
 				parser.load_from_stream (input_stream);
 				unowned Json.Node? root = parser.get_root ();
@@ -57,8 +56,7 @@ namespace Pamac {
 					}
 				}
 			} catch (Error e) {
-				warning (e.message);
-				stderr.printf ("Failed to query %s from AUR\n", uri);
+				stderr.printf ("Failed to query %s from AUR: %s\n", uri, e.message);
 			}
 			return null;
 		}
