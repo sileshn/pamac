@@ -196,7 +196,7 @@ namespace Pamac {
 			return new ChoosePkgsDialog (application_window);
 		}
 
-		protected override string[] choose_optdeps (string pkgname, string[] optdeps) {
+		protected override async string[] choose_optdeps (string pkgname, string[] optdeps) {
 			var optdeps_to_install = new GenericArray<string> ();
 			var choose_pkgs_dialog = create_choose_pkgs_dialog ();
 			choose_pkgs_dialog.title = dgettext (null, "Choose optional dependencies for %s").printf (pkgname);
@@ -222,7 +222,7 @@ namespace Pamac {
 			return optdeps_to_install.data;
 		}
 
-		protected override int choose_provider (string depend, string[] providers) {
+		protected override async int choose_provider (string depend, string[] providers) {
 			var choose_provider_dialog = new ChooseProviderDialog (application_window);
 			choose_provider_dialog.title = dgettext (null, "Choose a provider for %s").printf (depend);
 			unowned Gtk.Box box = choose_provider_dialog.get_content_area ();
@@ -267,7 +267,7 @@ namespace Pamac {
 			return index;
 		}
 
-		protected override bool ask_import_key (string pkgname, string key, string owner) {
+		protected override async bool ask_import_key (string pkgname, string key, string owner) {
 			var flags = Gtk.DialogFlags.MODAL;
 			int use_header_bar;
 			Gtk.Settings.get_default ().get ("gtk-dialogs-use-header", out use_header_bar);
@@ -309,7 +309,7 @@ namespace Pamac {
 			return false;
 		}
 
-		protected override bool ask_edit_build_files (TransactionSummary summary) {
+		protected override async bool ask_edit_build_files (TransactionSummary summary) {
 			bool answer = false;
 			summary_shown = true;
 			int response = show_summary (summary);
@@ -326,7 +326,7 @@ namespace Pamac {
 			return answer;
 		}
 
-		protected override bool ask_commit (TransactionSummary summary) {
+		protected override async bool ask_commit (TransactionSummary summary) {
 			if (summary_shown) {
 				summary_shown = false;
 				return commit_transaction_answer;
@@ -1025,7 +1025,7 @@ namespace Pamac {
 			dialog.destroy ();
 		}
 
-		protected override bool ask_snap_install_classic (string name) {
+		protected override async bool ask_snap_install_classic (string name) {
 			var flags = Gtk.DialogFlags.MODAL;
 			int use_header_bar;
 			Gtk.Settings.get_default ().get ("gtk-dialogs-use-header", out use_header_bar);

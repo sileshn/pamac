@@ -2,8 +2,6 @@ Pamac is a Package Manager with Alpm, AUR, Appstream, Flatpak and Snap support
 
 #### Features
 
- - libpamac: Library to access package infos and run transactions
- - Python bindings for libpamac
  - pamac: an easy CLI
  - pamac-manager: a Gtk3 GUI
  - pamac-tray: a Gtk3 tray icon with updates notifications
