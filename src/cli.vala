@@ -961,12 +961,22 @@ namespace Pamac {
 				trans_cancellable = false;
 			});
 			if (Posix.geteuid () != 0) {
-				// Use tty polkit authentication agent if needed
-				try {
-					pkttyagent = new Subprocess.newv ({"pkttyagent", "--fallback"}, SubprocessFlags.NONE);
-				} catch (Error e) {
-					stdout.printf ("%s: %s\n", dgettext (null, "Error"), e.message);
-				}
+				unowned string? use_cli_auth = Environment.get_variable("PAMAC_CLI_AUTH");
+				// Use tty polkit authentication if needed, cli version if within a cli(tty) session
+				if (use_cli_auth == "1") {
+				    try {
+					        pkttyagent = new Subprocess.newv ({"pkttyagent"}, SubprocessFlags.NONE);
+						} catch (Error e) {
+						    stdout.printf ("%s: %s\n", dgettext (null, "Error"), e.message);
+						}
+			} else {
+			    // Use tty polkit authentication if needed, gui version if available, cli if not
+					try {
+					        pkttyagent = new Subprocess.newv ({"pkttyagent", "--fallback"}, SubprocessFlags.NONE);
+						} catch (Error e) {
+						    stdout.printf ("%s: %s\n", dgettext (null, "Error"), e.message);
+						}
+			}
 			}
 		}
 
@@ -2938,4 +2948,3 @@ namespace Pamac {
 		return strcmp (str_a, str_b);
 	}
 }
-
